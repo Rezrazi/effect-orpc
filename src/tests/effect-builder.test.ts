@@ -398,6 +398,75 @@ describe(".traced", () => {
       expect(typeof stackTrace).toBe("string");
     }
   });
+
+  it("accepts a callback function for span name", () => {
+    const effectBuilder = makeEffectORPC(runtime);
+
+    const traced = effectBuilder.traced((procedure) => {
+      return `custom.${procedure["~orpc"].route?.path || "unknown"}`;
+    });
+
+    expect(traced).instanceOf(EffectBuilder);
+    expect(traced).not.toBe(effectBuilder);
+    expect(traced["~effect"].spanConfig).toBeDefined();
+    expect(typeof traced["~effect"].spanConfig?.name).toBe("function");
+  });
+
+  it("traced procedure with callback function runs successfully", async () => {
+    const effectBuilder = makeEffectORPC(runtime);
+
+    const procedure = effectBuilder
+      .input(z.object({ id: z.string() }))
+      .route({ path: "/api/users" })
+      .traced((proc) => `dynamic.${proc["~orpc"].route?.path}`)
+      // oxlint-disable-next-line require-yield
+      .effect(function* ({ input }) {
+        return { id: input.id, name: "Charlie" };
+      });
+
+    const result = await procedure["~effect"].handler({
+      context: {},
+      input: { id: "789" },
+      path: ["users", "getDynamic"],
+      procedure: procedure as any,
+      signal: undefined,
+      lastEventId: undefined,
+      errors: {},
+    });
+
+    expect(result).toEqual({ id: "789", name: "Charlie" });
+  });
+
+  it("callback receives procedure with correct structure", async () => {
+    const effectBuilder = makeEffectORPC(runtime);
+
+    const callbackSpy = vi.fn((proc) => {
+      // Verify the procedure has expected properties
+      expect(proc).toHaveProperty("~orpc");
+      return "callback.result";
+    });
+
+    const procedure = effectBuilder
+      .route({ path: "/test" })
+      .traced(callbackSpy)
+      // oxlint-disable-next-line require-yield
+      .effect(function* () {
+        return "test";
+      });
+
+    await procedure["~effect"].handler({
+      context: {},
+      input: undefined,
+      path: ["test"],
+      procedure: procedure as any,
+      signal: undefined,
+      lastEventId: undefined,
+      errors: {},
+    });
+
+    expect(callbackSpy).toHaveBeenCalledTimes(1);
+    expect(callbackSpy).toHaveBeenCalledWith(procedure);
+  });
 });
 
 describe("default tracing (without .traced())", () => {
