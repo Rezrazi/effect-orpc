@@ -18,6 +18,7 @@ import type {
   MergedCurrentContext,
   MergedInitialContext,
   Middleware,
+  Procedure,
   ProcedureHandler,
   ProcedureHandlerOptions,
   Router,
@@ -510,11 +511,13 @@ export class EffectBuilder<
    * The span name is used for Effect tracing via `Effect.withSpan`.
    * Stack trace is captured at the call site for better error reporting.
    *
-   * @param spanName - The name of the span for telemetry (e.g., 'users.getUser')
+   * @param spanName - The name of the span for telemetry (e.g., 'users.getUser'),
+   *                   or a callback function that receives the procedure and returns the span name
    * @returns An EffectBuilder with span tracing configured
    *
    * @example
    * ```ts
+   * // Using a string
    * const getUser = effectOs
    *   .input(z.object({ id: z.string() }))
    *   .traced('users.getUser')
@@ -522,10 +525,30 @@ export class EffectBuilder<
    *     const userService = yield* UserService
    *     return yield* userService.findById(input.id)
    *   })
+   *
+   * // Using a callback
+   * const getUser = effectOs
+   *   .input(z.object({ id: z.string() }))
+   *   .traced((procedure) => `user.${procedure['~orpc'].route?.path}`)
+   *   .effect(function* ({ input }) {
+   *     const userService = yield* UserService
+   *     return yield* userService.findById(input.id)
+   *   })
    * ```
    */
   traced(
-    spanName: string,
+    spanName:
+      | string
+      | ((
+          procedure: Procedure<
+            Context,
+            Context,
+            AnySchema,
+            AnySchema,
+            ErrorMap,
+            Meta
+          >,
+        ) => string),
   ): EffectBuilder<
     TInitialContext,
     TCurrentContext,
@@ -617,7 +640,11 @@ export class EffectBuilder<
             this["~effect"].effectErrorMap,
           ),
         };
-        const spanName = spanConfig?.name ?? opts.path.join(".");
+        const spanName = spanConfig?.name
+          ? typeof spanConfig.name === "function"
+            ? spanConfig.name(opts.procedure)
+            : spanConfig.name
+          : opts.path.join(".");
         const captureStackTrace =
           spanConfig?.captureStackTrace ?? defaultCaptureStackTrace;
         const resolver = Effect.fnUntraced(effectFn);

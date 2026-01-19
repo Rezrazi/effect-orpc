@@ -14,6 +14,7 @@ import type {
   BuilderWithMiddlewares,
   Context,
   EnhanceRouterOptions,
+  Procedure,
   ProcedureBuilder,
   ProcedureBuilderWithInput,
   ProcedureBuilderWithInputOutput,
@@ -106,9 +107,20 @@ export interface EffectProcedureDef<
  */
 export interface EffectSpanConfig {
   /**
-   * The name of the span for telemetry.
+   * The name of the span for telemetry, or a function that computes it from the procedure.
    */
-  name: string;
+  name:
+    | string
+    | ((
+        procedure: Procedure<
+          Context,
+          Context,
+          AnySchema,
+          AnySchema,
+          ErrorMap,
+          Meta
+        >,
+      ) => string);
   /**
    * Function to lazily capture the stack trace at definition time.
    */

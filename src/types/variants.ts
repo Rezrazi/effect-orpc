@@ -2,6 +2,7 @@ import type { HTTPPath } from "@orpc/client";
 import type {
   AnySchema,
   ContractRouter,
+  ErrorMap,
   InferSchemaInput,
   InferSchemaOutput,
   Meta,
@@ -21,6 +22,7 @@ import type {
   MergedCurrentContext,
   MergedInitialContext,
   Middleware,
+  Procedure,
   Router,
 } from "@orpc/server";
 
@@ -241,7 +243,18 @@ export interface EffectBuilderWithMiddlewares<
   >;
 
   "traced"(
-    spanName: string,
+    spanName:
+      | string
+      | ((
+          procedure: Procedure<
+            Context,
+            Context,
+            AnySchema,
+            AnySchema,
+            ErrorMap,
+            Meta
+          >,
+        ) => string),
   ): EffectProcedureBuilderWithInput<
     TInitialContext,
     TCurrentContext,
@@ -734,7 +747,18 @@ export interface EffectProcedureBuilderWithInput<
   >;
 
   "traced"(
-    spanName: string,
+    spanName:
+      | string
+      | ((
+          procedure: Procedure<
+            Context,
+            Context,
+            AnySchema,
+            AnySchema,
+            ErrorMap,
+            Meta
+          >,
+        ) => string),
   ): EffectProcedureBuilderWithInput<
     TInitialContext,
     TCurrentContext,
@@ -931,7 +955,18 @@ export interface EffectProcedureBuilderWithOutput<
   >;
 
   "traced"(
-    spanName: string,
+    spanName:
+      | string
+      | ((
+          procedure: Procedure<
+            Context,
+            Context,
+            AnySchema,
+            AnySchema,
+            ErrorMap,
+            Meta
+          >,
+        ) => string),
   ): EffectProcedureBuilderWithInput<
     TInitialContext,
     TCurrentContext,
@@ -1144,7 +1179,18 @@ export interface EffectProcedureBuilderWithInputOutput<
   >;
 
   "traced"(
-    spanName: string,
+    spanName:
+      | string
+      | ((
+          procedure: Procedure<
+            Context,
+            Context,
+            AnySchema,
+            AnySchema,
+            ErrorMap,
+            Meta
+          >,
+        ) => string),
   ): EffectProcedureBuilderWithInput<
     TInitialContext,
     TCurrentContext,
